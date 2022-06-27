@@ -57,7 +57,7 @@ func TestChainlinkApplication_ConfigDump(t *testing.T) {
 				require.NoError(t, os.Setenv(k, v))
 			}
 			var app chainlink.ChainlinkApplication
-			got, err := app.ConfigDump(testutils.TestCtx(t))
+			got, err := app.ConfigDump(testutils.Context(t))
 			require.NoError(t, err)
 			assert.Equal(t, string(exp), got, diff.Diff(string(exp), got))
 		})
