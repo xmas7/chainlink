@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink/core/services/directrequest"
 	"github.com/smartcontractkit/chainlink/core/services/job"
 	"github.com/smartcontractkit/chainlink/core/services/keeper"
+	"github.com/smartcontractkit/chainlink/core/services/keystore/keys/ethkey"
 	"github.com/smartcontractkit/chainlink/core/services/ocr"
 	"github.com/smartcontractkit/chainlink/core/services/ocrbootstrap"
 	"github.com/smartcontractkit/chainlink/core/services/pipeline"
@@ -821,17 +822,15 @@ func Test_FindPipelineRunIDsByJobID(t *testing.T) {
 
 	externalJobID := uuid.NewV4()
 	_, address := cltest.MustInsertRandomKey(t, keyStore.Eth())
+
 	jb, err := ocr.ValidatedOracleSpecToml(cc,
 		testspecs.GenerateOCRSpec(testspecs.OCRSpecParams{
 			JobID:              externalJobID.String(),
 			TransmitterAddress: address.Hex(),
 			DS1BridgeName:      bridge.Name.String(),
 			DS2BridgeName:      bridge2.Name.String(),
-		}).Toml(),
-	)
-	require.NoError(t, err)
+		}).Toml())
 
-	err = orm.CreateJob(&jb)
 	require.NoError(t, err)
 
 	t.Run("with no pipeline runs", func(t *testing.T) {
@@ -839,6 +838,9 @@ func Test_FindPipelineRunIDsByJobID(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, runIDs)
 	})
+
+	err = orm.CreateJob(&jb)
+	require.NoError(t, err)
 
 	t.Run("with a pipeline run", func(t *testing.T) {
 		run := mustInsertPipelineRun(t, pipelineORM, jb)
@@ -848,6 +850,49 @@ func Test_FindPipelineRunIDsByJobID(t *testing.T) {
 		require.Len(t, runIDs, 1)
 
 		assert.Equal(t, run.ID, runIDs[0])
+	})
+
+	jobs := make([]job.Job, 10)
+	for j := 0; j < len(jobs); j++ {
+		_, bridge := cltest.MustCreateBridge(t, db, cltest.BridgeOpts{}, config)
+		_, bridge2 := cltest.MustCreateBridge(t, db, cltest.BridgeOpts{}, config)
+		jobID := uuid.NewV4().String()
+		key, err := ethkey.NewV2()
+
+		require.NoError(t, err)
+		jb, err = ocr.ValidatedOracleSpecToml(cc,
+			testspecs.GenerateOCRSpec(testspecs.OCRSpecParams{
+				JobID:              jobID,
+				Name:               fmt.Sprintf("Job #%v", jobID),
+				DS1BridgeName:      bridge.Name.String(),
+				DS2BridgeName:      bridge2.Name.String(),
+				TransmitterAddress: address.Hex(),
+				ContractAddress:    key.Address.Address().String(),
+			}).Toml())
+
+		require.NoError(t, err)
+
+		err = orm.CreateJob(&jb)
+		require.NoError(t, err)
+		jobs[j] = jb
+	}
+
+	for i, j := 0, 0; i < 2500; i++ {
+		mustInsertPipelineRun(t, pipelineORM, jb)
+		if j == len(jobs) {
+			j = 0
+		}
+	}
+
+	// Internally these queries are batched by 1000, this tests case requiring concatenation
+	//  of more than 1 batch
+	t.Run("with many pipeline runs", func(t *testing.T) {
+
+		runIDs, err := orm.FindPipelineRunIDsByJobID(jb.ID, 950, 100)
+		require.NoError(t, err)
+		require.Len(t, runIDs, 100)
+
+		//assert.Equal(t, run.ID, runIDs[0])
 	})
 }
 
