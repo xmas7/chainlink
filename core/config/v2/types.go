@@ -3,6 +3,7 @@ package v2
 import (
 	"net"
 
+	ocrcommontypes "github.com/smartcontractkit/libocr/commontypes"
 	ocrnetworking "github.com/smartcontractkit/libocr/networking"
 
 	"github.com/smartcontractkit/chainlink/core/config"
@@ -15,11 +16,9 @@ import (
 // Core holds the core configuration. See chainlink.Config for more information.
 type Core struct {
 	// General/misc
-	Dev                 *bool
 	ExplorerURL         *models.URL
 	InsecureFastScrypt  *bool
-	ReaperExpiration    *models.Duration
-	RootDir             *string
+	RootDir             *string //TODO back to env?
 	ShutdownGracePeriod *models.Duration
 
 	Feature *Feature
@@ -49,18 +48,40 @@ type Core struct {
 	Sentry *Sentry
 }
 
+func (c *Core) ValidateConfig() (err error) {
+	err = Validate(err, c.Feature, "Feature")
+	err = Validate(err, c.Database, "Database")
+	err = Validate(err, c.TelemetryIngress, "TelemetryIngress")
+	err = Validate(err, c.Log, "Log")
+	err = Validate(err, c.WebServer, "WebServer")
+	err = Validate(err, c.JobPipeline, "JobPipeline")
+	err = Validate(err, c.FluxMonitor, "FluxMonitor")
+	err = Validate(err, c.OCR2, "OCR2")
+	err = Validate(err, c.OCR, "OCR")
+	err = Validate(err, c.P2P, "P2P")
+	err = Validate(err, c.Keeper, "Keeper")
+	err = Validate(err, c.AutoPprof, "AutoPprof")
+	err = Validate(err, c.Sentry, "Sentry")
+	//TODO self validation
+	return
+}
+
 type Secrets struct {
 	DatabaseURL       *models.URL
-	ExplorerAccessKey string `toml:",omitempty"`
-	ExplorerSecret    string `toml:",omitempty"`
+	ExplorerAccessKey *string
+	ExplorerSecret    *string
 	//TODO https://app.shortcut.com/chainlinklabs/story/33624/add-secrets-toml
 }
 
 type Feature struct {
-	FeedsManager       *bool
-	LogPoller          *bool
-	OffchainReporting2 *bool
-	OffchainReporting  *bool
+	FeedsManager *bool
+	LogPoller    *bool
+	UICSA        *bool
+}
+
+func (*Feature) ValidateConfig() (err error) {
+	//TODO
+	return
 }
 
 type Database struct {
@@ -78,18 +99,42 @@ type Database struct {
 	Lock *DatabaseLock
 }
 
+func (d *Database) ValidateConfig() (err error) {
+	if d == nil {
+		return nil
+	}
+	err = Validate(err, d.Backup, "Backup")
+	err = Validate(err, d.Listener, "Listener")
+	err = Validate(err, d.Lock, "Lock")
+	//TODO self
+	return
+}
+
 type DatabaseListener struct {
 	MaxReconnectDuration *models.Duration
 	MinReconnectInterval *models.Duration
 	FallbackPollInterval *models.Duration
 }
 
+func (l *DatabaseListener) ValidateConfig() (err error) {
+	if l == nil {
+		return nil
+	}
+	//TODO
+	return
+}
+
 type DatabaseLock struct {
-	Mode                  *string
-	AdvisoryCheckInterval *models.Duration
-	AdvisoryID            *int64
-	LeaseDuration         *models.Duration
-	LeaseRefreshInterval  *models.Duration
+	LeaseDuration        *models.Duration
+	LeaseRefreshInterval *models.Duration
+}
+
+func (l *DatabaseLock) ValidateConfig() (err error) {
+	if l == nil {
+		return nil
+	}
+	//TODO
+	return
 }
 
 type DatabaseBackup struct {
@@ -98,6 +143,14 @@ type DatabaseBackup struct {
 	Mode             *config.DatabaseBackupMode
 	OnVersionUpgrade *bool
 	URL              *models.URL
+}
+
+func (b *DatabaseBackup) ValidateConfig() (err error) {
+	if b == nil {
+		return nil
+	}
+	//TODO
+	return
 }
 
 type TelemetryIngress struct {
@@ -112,6 +165,11 @@ type TelemetryIngress struct {
 	UseBatchSend *bool
 }
 
+func (*TelemetryIngress) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type Log struct {
 	DatabaseQueries *bool
 	FileDir         *string
@@ -122,13 +180,19 @@ type Log struct {
 	UnixTS          *bool
 }
 
+func (*Log) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type WebServer struct {
-	AllowOrigins      *string
-	BridgeResponseURL *models.URL
-	HTTPWriteTimeout  *models.Duration
-	HTTPPort          *uint16
-	SecureCookies     *bool
-	SessionTimeout    *models.Duration
+	AllowOrigins            *string
+	BridgeResponseURL       *models.URL
+	HTTPWriteTimeout        *models.Duration
+	HTTPPort                *uint16
+	SecureCookies           *bool
+	SessionTimeout          *models.Duration
+	SessionReaperExpiration *models.Duration
 
 	MFA *WebServerMFA
 
@@ -137,9 +201,25 @@ type WebServer struct {
 	TLS *WebServerTLS
 }
 
+func (w *WebServer) ValidateConfig() (err error) {
+	if w == nil {
+		return nil
+	}
+	err = Validate(err, w.MFA, "MFA")
+	err = Validate(err, w.RateLimit, "RateLimit")
+	err = Validate(err, w.TLS, "TLS")
+	//TODO
+	return
+}
+
 type WebServerMFA struct {
 	RPID     *string
 	RPOrigin *string
+}
+
+func (*WebServerMFA) ValidateConfig() (err error) {
+	//TODO
+	return
 }
 
 type WebServerRateLimit struct {
@@ -149,12 +229,22 @@ type WebServerRateLimit struct {
 	UnauthenticatedPeriod *models.Duration
 }
 
+func (*WebServerRateLimit) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type WebServerTLS struct {
 	CertPath      *string
 	ForceRedirect *bool
 	Host          *string
 	HTTPSPort     *uint16
 	KeyPath       *string
+}
+
+func (*WebServerTLS) ValidateConfig() (err error) {
+	//TODO
+	return
 }
 
 type JobPipeline struct {
@@ -167,12 +257,26 @@ type JobPipeline struct {
 	ResultWriteQueueDepth     *uint32
 }
 
+func (j *JobPipeline) ValidateConfig() (err error) {
+	if j == nil {
+		return nil
+	}
+	//TODO
+	return
+}
+
 type FluxMonitor struct {
 	DefaultTransactionQueueDepth *uint32
 	SimulateTransactions         *bool
 }
 
+func (*FluxMonitor) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type OCR2 struct {
+	Enabled                            *bool //TODO disabled
 	ContractConfirmations              *uint32
 	BlockchainTimeout                  *models.Duration
 	ContractPollInterval               *models.Duration
@@ -182,7 +286,13 @@ type OCR2 struct {
 	KeyBundleID                        *models.Sha256Hash
 }
 
+func (*OCR2) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type OCR struct {
+	Enabled                      *bool //TODO disabled
 	ObservationTimeout           *models.Duration
 	BlockchainTimeout            *models.Duration
 	ContractPollInterval         *models.Duration
@@ -194,6 +304,11 @@ type OCR struct {
 	TransmitterAddress   *ethkey.EIP55Address
 }
 
+func (*OCR) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type P2P struct {
 	// V1 and V2
 	IncomingMessageBufferSize *int64
@@ -203,6 +318,16 @@ type P2P struct {
 	V1 *P2PV1
 
 	V2 *P2PV2
+}
+
+func (p *P2P) ValidateConfig() (err error) {
+	if p == nil {
+		return nil
+	}
+	err = Validate(err, p.V1, "V1")
+	err = Validate(err, p.V2, "V2")
+	//TODO
+	return
 }
 
 func (p *P2P) NetworkStack() ocrnetworking.NetworkingStack {
@@ -231,12 +356,22 @@ type P2PV1 struct {
 	PeerstoreWriteInterval           *models.Duration
 }
 
+func (*P2PV1) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type P2PV2 struct {
 	AnnounceAddresses    *[]string
-	DefaultBootstrappers *[]string
+	DefaultBootstrappers *[]ocrcommontypes.BootstrapperLocator
 	DeltaDial            *models.Duration
 	DeltaReconcile       *models.Duration
 	ListenAddresses      *[]string
+}
+
+func (*P2PV2) ValidateConfig() (err error) {
+	//TODO
+	return
 }
 
 type Keeper struct {
@@ -254,8 +389,13 @@ type Keeper struct {
 	UpkeepCheckGasPriceEnabled   *bool
 }
 
+func (*Keeper) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type AutoPprof struct {
-	Enabled              *bool
+	Enabled              *bool //TODO Disabled?
 	ProfileRoot          *string
 	PollInterval         *models.Duration
 	GatherDuration       *models.Duration
@@ -269,9 +409,19 @@ type AutoPprof struct {
 	GoroutineThreshold   *int64
 }
 
+func (*AutoPprof) ValidateConfig() (err error) {
+	//TODO
+	return
+}
+
 type Sentry struct {
 	Debug       *bool
 	DSN         *string
 	Environment *string
 	Release     *string
+}
+
+func (*Sentry) ValidateConfig() (err error) {
+	//TODO
+	return
 }

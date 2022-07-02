@@ -1,14 +1,17 @@
 package v2
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"go.uber.org/multierr"
 
 	"github.com/smartcontractkit/chainlink/core/assets"
 	"github.com/smartcontractkit/chainlink/core/chains/evm/types"
+	v2 "github.com/smartcontractkit/chainlink/core/config/v2"
 	"github.com/smartcontractkit/chainlink/core/services/keystore/keys/ethkey"
 	"github.com/smartcontractkit/chainlink/core/store/models"
 	"github.com/smartcontractkit/chainlink/core/utils"
@@ -42,17 +45,29 @@ type Chain struct {
 
 	HeadTracker *HeadTracker
 
-	KeySpecific []KeySpecific `toml:",omitempty"`
+	KeySpecific KeySpecificConfig `toml:",omitempty"`
 
 	NodePool *NodePool
 
 	OCR *OCR
 }
 
+func (c *Chain) ValidateConfig() (err error) {
+	err = v2.Validate(err, c.BalanceMonitor, "BalanceMonitor")
+	err = v2.Validate(err, c.GasEstimator, "GasEstimator")
+	err = v2.Validate(err, c.HeadTracker, "HeadTracker")
+	err = v2.Validate(err, c.KeySpecific, "KeySpecific")
+	err = v2.Validate(err, c.NodePool, "NodePool")
+	err = v2.Validate(err, c.OCR, "OCR")
+	return
+}
+
 type BalanceMonitor struct {
 	Enabled    *bool
 	BlockDelay *uint16
 }
+
+func (*BalanceMonitor) ValidateConfig() (err error) { return } //TODO
 
 type GasEstimator struct {
 	Mode *string
@@ -79,12 +94,31 @@ type GasEstimator struct {
 	BlockHistory *BlockHistoryEstimator
 }
 
+func (*GasEstimator) ValidateConfig() (err error) { return } //TODO
+
 type BlockHistoryEstimator struct {
 	BatchSize                 *uint32
 	BlockDelay                *uint16
 	BlockHistorySize          *uint16
 	EIP1559FeeCapBufferBlocks *uint16
 	TransactionPercentile     *uint16
+}
+
+func (*BlockHistoryEstimator) ValidateConfig() (err error) { return } //TODO
+
+type KeySpecificConfig []KeySpecific
+
+func (ks KeySpecificConfig) ValidateConfig() (err error) {
+	addrs := map[string]struct{}{}
+	for _, k := range ks {
+		addr := k.Key.String()
+		if _, ok := addrs[addr]; ok {
+			err = multierr.Append(err, fmt.Errorf("duplicate address: %s", addr))
+		} else {
+			addrs[addr] = struct{}{}
+		}
+	}
+	return
 }
 
 type KeySpecific struct {
@@ -96,6 +130,8 @@ type KeySpecificGasEstimator struct {
 	PriceMax *utils.Wei
 }
 
+func (*KeySpecificGasEstimator) ValidateConfig() (err error) { return } //TODO
+
 type HeadTracker struct {
 	BlockEmissionIdleWarningThreshold *models.Duration
 	HistoryDepth                      *uint32
@@ -103,11 +139,15 @@ type HeadTracker struct {
 	SamplingInterval                  *models.Duration
 }
 
+func (*HeadTracker) ValidateConfig() (err error) { return } //TODO
+
 type NodePool struct {
 	NoNewHeadsThreshold  *models.Duration
 	PollFailureThreshold *uint32
 	PollInterval         *models.Duration
 }
+
+func (*NodePool) ValidateConfig() (err error) { return } //TODO
 
 type OCR struct {
 	ContractConfirmations              *uint16
@@ -116,6 +156,8 @@ type OCR struct {
 	ObservationTimeout                 *models.Duration
 	ObservationGracePeriod             *models.Duration
 }
+
+func (*OCR) ValidateConfig() (err error) { return } //TODO
 
 func (c *Chain) SetFromDB(cfg *types.ChainCfg) error {
 	if cfg == nil {
@@ -312,14 +354,29 @@ func (c *Chain) SetFromDB(cfg *types.ChainCfg) error {
 }
 
 type Node struct {
-	Name     *string
+	Name     string
 	WSURL    *models.URL
 	HTTPURL  *models.URL
 	SendOnly *bool
 }
 
+func (n *Node) ValidateConfig() (err error) {
+	if n.Name == "" {
+		err = multierr.Append(err, v2.ErrMissing{Name: "Name", Msg: "required for all nodes"})
+	}
+	if s := n.SendOnly; s != nil && *s {
+		if n.WSURL == nil {
+			err = multierr.Append(err, v2.ErrMissing{Name: "WSURL", Msg: "required for SendOnly nodes"})
+		}
+	}
+	if n.HTTPURL == nil {
+		err = multierr.Append(err, v2.ErrMissing{Name: "HTTPURL", Msg: "required for all nodes"})
+	}
+	return
+}
+
 func (n *Node) SetFromDB(db types.Node) (err error) {
-	n.Name = &db.Name
+	n.Name = db.Name
 	if db.WSURL.Valid {
 		var u *url.URL
 		u, err = url.Parse(db.WSURL.String)
