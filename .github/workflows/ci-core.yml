@@ -38,7 +38,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version-file: 'go.mod'
+#          go-version-file: 'go.mod'
+          go-version: ^1.19.0-rc.2
           cache: true
       - name: Touching core/web/assets/index.html
         run: mkdir -p core/web/assets && touch core/web/assets/index.html

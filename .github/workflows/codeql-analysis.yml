@@ -33,7 +33,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version-file: 'go.mod'
+#          go-version-file: 'go.mod'
+          go-version: ^1.19.0-rc.2
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
