@@ -28,7 +28,7 @@ jobs:
     if: ${{ needs.changes.outputs.src == 'true' }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -63,7 +63,7 @@ jobs:
     if: ${{ needs.changes.outputs.src == 'true' }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Run Tests
         uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/run-tests@v2.0.1
         env:

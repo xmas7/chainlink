@@ -84,7 +84,7 @@ jobs:
       GH_ACCESS_TOKEN: ${{ secrets.QA_PRIVATE_GHA_PULL }}
     steps:
       - name: Checkout Chainlink repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ${{ inputs.cl_repo }}
           ref: ${{ github.event.inputs.cl_ref }}
