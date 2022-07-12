@@ -247,6 +247,18 @@ func NewApp(client *Client) *cli.App {
 						},
 					},
 				},
+				{
+					Name:   "validate",
+					Usage:  "Validate provided TOML config file",
+					Action: client.ConfigFileValidate,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:     "file, f",
+							Usage:    "TOML config `FILE` name to validate",
+							Required: true,
+						},
+					},
+				},
 			},
 		},
 

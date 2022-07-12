@@ -162,9 +162,39 @@ func ExampleRun_config() {
 	//    setgasprice  Set the default gas price to use for outgoing transactions
 	//    loglevel     Set log level
 	//    logsql       Enable/disable sql statement logging
+	//    validate     Validate provided TOML config file
 	//
 	// OPTIONS:
 	//    --help, -h  show help
+}
+
+func ExampleRun_config_validate_without_file() {
+	run("config", "validate")
+	// Output:
+	// NAME:
+	//    core.test config validate - Validate provided TOML config file
+	//
+	// USAGE:
+	//    core.test config validate [command options] [arguments...]
+	//
+	// OPTIONS:
+	//    --file FILE, -f FILE  TOML config FILE name to validate
+}
+
+func ExampleRun_config_validate_with_invalid_file() {
+	run("config", "validate", "-f", "/does/not/exist")
+	// Output:
+	// Validation failed (open /does/not/exist: no such file or directory)
+}
+
+func ExampleRun_config_validate_with_invalid_toml_syntax() {
+	tmpFile, _ := ioutil.TempFile("", "")
+	defer tmpFile.Close()
+	tmpFile.WriteString("{invalid syntax {")
+
+	run("config", "validate", "-f", tmpFile.Name())
+	// Output:
+	// Validation failed ((1, 1): parsing error: keys cannot contain { character)
 }
 
 func ExampleRun_jobs() {
