@@ -6,3 +6,8 @@ import "github.com/smartcontractkit/chainlink/core/logger"
 func (cli *Client) CheckRemoteBuildCompatibility(lggr logger.Logger, onlyWarn bool, cliVersion, cliSha string) error {
 	return cli.checkRemoteBuildCompatibility(lggr, onlyWarn, cliVersion, cliSha)
 }
+
+// ConfigDumpHelper exposes configDump for testing.
+func (cli *Client) ConfigDumpHelper() (string, error) {
+	return cli.configDump()
+}
