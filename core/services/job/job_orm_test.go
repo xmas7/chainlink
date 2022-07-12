@@ -878,7 +878,8 @@ func Test_FindPipelineRunIDsByJobID(t *testing.T) {
 	}
 
 	for i, j := 0, 0; i < 2500; i++ {
-		mustInsertPipelineRun(t, pipelineORM, jb)
+		mustInsertPipelineRun(t, pipelineORM, jobs[j])
+		j++
 		if j == len(jobs) {
 			j = 0
 		}
@@ -886,13 +887,20 @@ func Test_FindPipelineRunIDsByJobID(t *testing.T) {
 
 	// Internally these queries are batched by 1000, this tests case requiring concatenation
 	//  of more than 1 batch
-	t.Run("with many pipeline runs", func(t *testing.T) {
+	t.Run("with batch concatenation limit 10", func(t *testing.T) {
+		runIDs, err := orm.FindPipelineRunIDsByJobID(jobs[3].ID, 95, 10)
+		require.NoError(t, err)
+		require.Len(t, runIDs, 10)
+		assert.Equal(t, int64(40), runIDs[3]-runIDs[7])
+	})
 
-		runIDs, err := orm.FindPipelineRunIDsByJobID(jb.ID, 950, 100)
+	// Internally these queries are batched by 1000, this tests case requiring concatenation
+	//  of more than 1 batch
+	t.Run("with batch concatenation limit 100", func(t *testing.T) {
+		runIDs, err := orm.FindPipelineRunIDsByJobID(jobs[3].ID, 95, 100)
 		require.NoError(t, err)
 		require.Len(t, runIDs, 100)
-
-		//assert.Equal(t, run.ID, runIDs[0])
+		assert.Equal(t, int64(670), runIDs[12]-runIDs[79])
 	})
 }
 

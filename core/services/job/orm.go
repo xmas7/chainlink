@@ -873,17 +873,39 @@ func (o *orm) loadPipelineRunIDs(jobID *int32, offset, limit int, tx pg.Queryer)
 	//  this query requires a sort of all runs matching jobID, so we restrict it to the
 	//  range minID <-> maxID.
 
-	//batch := make([]int64, 0, limit)
-
 	for n := int64(1000); maxID > 0 && len(ids) < limit; n *= 2 {
 		minID := maxID - n
 		if err = tx.Select(&ids, stmt, jobID, offset, limit-len(ids), minID, maxID); err != nil {
 			err = errors.Wrap(err, "error loading runs")
 			return
 		}
+		if offset > 0 {
+			if len(ids) > 0 {
+				// If we're already receiving rows back, then we no longer need an offset
+				offset = 0
+			} else {
+				var skipped int
+				// If no rows were returned, we need to know whether there were any ids skipped
+				//  in this batch due to the offset, and reduce it for the next batch
+				err = tx.Select(&skipped,
+					fmt.Sprintf(
+						`SELECT COUNT(p.id) FROM pipeline_runs AS p %s p.id >= $2 AND p.id <= $3`, filter,
+					),
+				)
+				if err != nil {
+					err = errors.Wrap(err, "error loading from pipeline_runs")
+					return
+				}
+				offset -= skipped
+				if offset < 0 { // sanity assertion, if this ever happened it would probably mean db corruption or pg bug
+					err = errors.Wrap(err, "internal db error while reading pipeline_runs")
+					return
+				}
+				o.lggr.Debugw("loadPipelineRunIDs empty batch", "minId", minID, "maxID", maxID, "n", n, "len(ids)", len(ids), "limit", limit, "offset", offset, "skipped", skipped)
 
+			}
+		}
 		maxID = minID - 1
-		//ids = append(ids, batch...)
 	}
 	return
 }
