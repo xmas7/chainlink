@@ -120,7 +120,7 @@ test_chaos: # run core node chaos tests.
 
 .PHONY: test_benchmark_keeper
 test_benchmark_keeper:
-	go test -count=1 -v -timeout 10m -run ^TestKeeperBenchmark  ./integration-tests/benchmark
+	cd integration-tests && go test -count=1 -v -timeout 10m -run ^TestKeeperBenchmark  ./benchmark
 
 .PHONY: config-docs
 config-docs: # Generate core node configuration documentation
