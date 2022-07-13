@@ -9,8 +9,6 @@ import (
 	"github.com/smartcontractkit/chainlink-env/pkg"
 	"github.com/smartcontractkit/chainlink-env/pkg/helm/chainlink"
 	"github.com/smartcontractkit/chainlink-env/pkg/helm/ethereum"
-	"github.com/smartcontractkit/chainlink-env/pkg/helm/mockserver"
-	mockservercfg "github.com/smartcontractkit/chainlink-env/pkg/helm/mockserver-cfg"
 	"github.com/smartcontractkit/chainlink-env/pkg/helm/remotetestrunner"
 
 	"github.com/smartcontractkit/chainlink-testing-framework/actions"
@@ -102,12 +100,12 @@ func benchmarkTestHelper(
 					"memory": "1024Mi",
 				},
 			},
+			"stateful": true,
+			"capacity": "5Gi",
 		},
 	}
 
 	err = env.
-		AddHelm(mockservercfg.New(nil)).
-		AddHelm(mockserver.New(nil)).
 		AddHelm(remotetestrunner.New(remoteRunnerWrapper)).
 		AddHelm(ethereum.New(&ethereum.Props{
 			NetworkName: evmNetwork.Name,

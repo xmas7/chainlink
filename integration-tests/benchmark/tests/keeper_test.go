@@ -7,8 +7,6 @@ import (
 	"github.com/smartcontractkit/chainlink-env/environment"
 	"github.com/smartcontractkit/chainlink-env/pkg/helm/chainlink"
 	"github.com/smartcontractkit/chainlink-env/pkg/helm/ethereum"
-	"github.com/smartcontractkit/chainlink-env/pkg/helm/mockserver"
-	mockservercfg "github.com/smartcontractkit/chainlink-env/pkg/helm/mockserver-cfg"
 
 	"github.com/smartcontractkit/chainlink-testing-framework/actions"
 	"github.com/smartcontractkit/chainlink-testing-framework/blockchain"
@@ -33,8 +31,6 @@ var _ = Describe("Keeper benchmark suite @benchmark-keeper", func() {
 			benchmarkNetwork = blockchain.LoadNetworkFromEnvironment()
 			testEnvironment = environment.New(&environment.Config{InsideK8s: true})
 			err = testEnvironment.
-				AddHelm(mockservercfg.New(nil)).
-				AddHelm(mockserver.New(nil)).
 				AddHelm(ethereum.New(&ethereum.Props{
 					NetworkName: benchmarkNetwork.Name,
 					Simulated:   benchmarkNetwork.Simulated,
@@ -46,12 +42,12 @@ var _ = Describe("Keeper benchmark suite @benchmark-keeper", func() {
 		})
 
 		By("Setup the Keeper test", func() {
-			chainClient, err := blockchain.NewEthereumMultiNodeClientSetup(blockchain.SimulatedEVMNetwork)(testEnvironment)
+			chainClient, err := blockchain.NewEthereumMultiNodeClientSetup(benchmarkNetwork)(testEnvironment)
 			Expect(err).ShouldNot(HaveOccurred(), "Connecting to blockchain nodes shouldn't fail")
 			keeperBenchmarkTest = testsetups.NewKeeperBenchmarkTest(
 				testsetups.KeeperBenchmarkTestInputs{
 					BlockchainClient:  chainClient,
-					NumberOfContracts: 500, // TODO- Update to 500
+					NumberOfContracts: 100, // TODO- Update to 500
 					KeeperRegistrySettings: &contracts.KeeperRegistrySettings{
 						PaymentPremiumPPB:    uint32(0),
 						BlockCountPerTurn:    big.NewInt(100),
@@ -65,10 +61,11 @@ var _ = Describe("Keeper benchmark suite @benchmark-keeper", func() {
 					},
 					CheckGasToBurn:       100000,
 					PerformGasToBurn:     150000,
-					BlockRange:           3600, // TODO- Update to 3600
+					BlockRange:           100, // TODO- Update to 3600
 					BlockInterval:        20,
 					ChainlinkNodeFunding: big.NewFloat(1000),
 					UpkeepGasLimit:       500000,
+					UpkeepSLA:            20,
 				},
 			)
 			keeperBenchmarkTest.Setup(testEnvironment)
@@ -86,6 +83,7 @@ var _ = Describe("Keeper benchmark suite @benchmark-keeper", func() {
 			if err := actions.TeardownRemoteSuite(keeperBenchmarkTest.TearDownVals()); err != nil {
 				log.Error().Err(err).Msg("Error tearing down environment")
 			}
+			log.Info().Msg("Keepers Benchmark Test Concluded")
 		})
 	})
 })

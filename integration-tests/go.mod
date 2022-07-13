@@ -9,7 +9,7 @@ require (
 	github.com/rs/zerolog v1.27.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/smartcontractkit/chainlink-env v0.2.19
-	github.com/smartcontractkit/chainlink-testing-framework v1.4.3-0.20220712100516-fdfa73aad6d3
+	github.com/smartcontractkit/chainlink-testing-framework v1.4.3-0.20220713073706-79b776d121d8
 	github.com/stretchr/testify v1.8.0
 )
 
@@ -24,6 +24,7 @@ require (
 	github.com/aws/constructs-go/constructs/v10 v10.1.43 // indirect
 	github.com/aws/jsii-runtime-go v1.61.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/cdk8s-team/cdk8s-core-go/cdk8s/v2 v2.3.41 // indirect
 	github.com/chai2010/gettext-go v0.0.0-20160711120539-c6fed771bfd5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
