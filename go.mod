@@ -20,8 +20,8 @@ require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/expvar v0.0.0-20181230111036-f23b556cc79f
 	github.com/gin-contrib/size v0.0.0-20190528085907-355431950c57
-	github.com/gin-gonic/contrib v0.0.0-20190526021735-7fb7810ed2a0
-	github.com/gin-gonic/gin v1.8.1
+	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
+	github.com/gin-gonic/gin v1.7.7
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/securecookie v1.1.1
@@ -90,8 +90,10 @@ require (
 )
 
 require (
+	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/go-errors/errors v1.4.1 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
+	github.com/tendermint/btcd v0.1.1 // indirect
 )
 
 require (
@@ -111,7 +113,6 @@ require (
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -158,7 +159,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.10.1 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/gateway v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.3
@@ -302,7 +302,6 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
-	github.com/tendermint/btcd v0.1.1 // indirect
 	github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15 // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tendermint/tm-db v0.6.6 // indirect
