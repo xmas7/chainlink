@@ -12,14 +12,36 @@ import (
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/smartcontractkit/chainlink/core/internal/cltest"
+	"github.com/smartcontractkit/chainlink/core/internal/cltest/heavyweight"
 	"github.com/smartcontractkit/chainlink/core/internal/testutils/pgtest"
 	"github.com/smartcontractkit/chainlink/core/logger"
 	"github.com/smartcontractkit/chainlink/core/services/pipeline"
 	"github.com/smartcontractkit/chainlink/core/store/models"
 )
 
+func setupORM(t *testing.T, name string) (db *sqlx.DB, orm pipeline.ORM) {
+	t.Helper()
+
+	if name != "" {
+		_, db = heavyweight.FullTestDB(t, name)
+	} else {
+		db = pgtest.NewSqlxDB(t)
+	}
+	orm = pipeline.NewORM(db, logger.TestLogger(t), cltest.NewTestGeneralConfig(t))
+
+	return
+}
+
+func setupHeavyORM(t *testing.T, name string) (db *sqlx.DB, orm pipeline.ORM) {
+	return setupORM(t, name)
+}
+
+func setupLiteORM(t *testing.T) (db *sqlx.DB, orm pipeline.ORM) {
+	return setupORM(t, "")
+}
+
 func Test_PipelineORM_CreateSpec(t *testing.T) {
-	db, orm := setupORM(t)
+	db, orm := setupLiteORM(t)
 
 	var (
 		source          = ""
@@ -41,7 +63,7 @@ func Test_PipelineORM_CreateSpec(t *testing.T) {
 }
 
 func Test_PipelineORM_FindRun(t *testing.T) {
-	db, orm := setupORM(t)
+	db, orm := setupLiteORM(t)
 
 	_, err := db.Exec(`SET CONSTRAINTS pipeline_runs_pipeline_spec_id_fkey DEFERRED`)
 	require.NoError(t, err)
@@ -66,15 +88,6 @@ func mustInsertPipelineRun(t *testing.T, orm pipeline.ORM) pipeline.Run {
 
 	require.NoError(t, orm.InsertRun(&run))
 	return run
-}
-
-func setupORM(t *testing.T) (*sqlx.DB, pipeline.ORM) {
-	t.Helper()
-
-	db := pgtest.NewSqlxDB(t)
-	orm := pipeline.NewORM(db, logger.TestLogger(t), cltest.NewTestGeneralConfig(t))
-
-	return db, orm
 }
 
 func mustInsertAsyncRun(t *testing.T, orm pipeline.ORM) *pipeline.Run {
@@ -112,7 +125,7 @@ answer2 [type=bridge name=election_winner index=1];
 }
 
 func TestInsertFinishedRuns(t *testing.T) {
-	db, orm := setupORM(t)
+	db, orm := setupLiteORM(t)
 
 	_, err := db.Exec(`SET CONSTRAINTS pipeline_runs_pipeline_spec_id_fkey DEFERRED`)
 	require.NoError(t, err)
@@ -167,7 +180,7 @@ func TestInsertFinishedRuns(t *testing.T) {
 
 // Tests that inserting run results, then later updating the run results via upsert will work correctly.
 func Test_PipelineORM_StoreRun_ShouldUpsert(t *testing.T) {
-	_, orm := setupORM(t)
+	_, orm := setupLiteORM(t)
 
 	run := mustInsertAsyncRun(t, orm)
 
@@ -246,7 +259,7 @@ func Test_PipelineORM_StoreRun_ShouldUpsert(t *testing.T) {
 // Tests that trying to persist a partial run while new data became available (i.e. via /v2/restart)
 // will detect a restart and update the result data on the Run.
 func Test_PipelineORM_StoreRun_DetectsRestarts(t *testing.T) {
-	db, orm := setupORM(t)
+	db, orm := setupLiteORM(t)
 
 	run := mustInsertAsyncRun(t, orm)
 
@@ -310,7 +323,7 @@ func Test_PipelineORM_StoreRun_DetectsRestarts(t *testing.T) {
 }
 
 func Test_PipelineORM_StoreRun_UpdateTaskRunResult(t *testing.T) {
-	_, orm := setupORM(t)
+	_, orm := setupLiteORM(t)
 
 	run := mustInsertAsyncRun(t, orm)
 
@@ -367,7 +380,7 @@ func Test_PipelineORM_StoreRun_UpdateTaskRunResult(t *testing.T) {
 }
 
 func Test_PipelineORM_DeleteRun(t *testing.T) {
-	_, orm := setupORM(t)
+	_, orm := setupLiteORM(t)
 
 	run := mustInsertAsyncRun(t, orm)
 
@@ -409,7 +422,7 @@ func Test_PipelineORM_DeleteRun(t *testing.T) {
 }
 
 func Test_PipelineORM_DeleteRunsOlderThan(t *testing.T) {
-	_, orm := setupORM(t)
+	_, orm := setupHeavyORM(t, "pipeline_runs_reaper")
 
 	var runsIds []int64
 
